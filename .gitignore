@@ -1,0 +1,14 @@
+*.py[cod]
+.venv
+*.egg
+*.egg-info
+dist
+build
+_build
+eggs
+parts
+develop-eggs
+__pycache__
+pip-log.txt
+.coverage
+htmlcov
