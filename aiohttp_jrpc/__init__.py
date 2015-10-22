@@ -9,7 +9,7 @@ import asyncio
 import json
 import traceback
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 JSONRPC20 = {
     "type": "object",
@@ -20,6 +20,18 @@ JSONRPC20 = {
         "id": {"type": "any"},
     },
 }
+
+
+@asyncio.coroutine
+def jrpc_errorhandler_middleware(app, handler):
+    @asyncio.coroutine
+    def middleware(request):
+        try:
+            return (yield from handler(request))
+        except Exception:
+            traceback.print_exc()
+            return JError().internal()
+    return middleware
 
 
 @asyncio.coroutine
@@ -59,9 +71,6 @@ class Service(object):
                     raise InvalidParams(err)
                 except SchemaError as err:
                     raise InternalError(err)
-                except Exception as err:
-                    traceback.print_exc()
-                    raise InternalError(err)
                 return fun(self, ctx, data['params'], *a, **kw)
             return d_func
         return dec
@@ -77,9 +86,6 @@ class Service(object):
             return JError().request()
         except InternalError:
             return JError().internal()
-        except Exception:
-            traceback.print_exc()
-            return JError().internal()
 
         try:
             i_app = getattr(self, data['method'])
@@ -92,9 +98,6 @@ class Service(object):
         except InvalidParams:
             return JError(data).params()
         except InternalError:
-            return JError(data).internal()
-        except Exception:
-            traceback.print_exc()
             return JError(data).internal()
 
         return JResponse(jsonrpc={

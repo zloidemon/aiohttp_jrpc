@@ -4,7 +4,7 @@ import unittest
 import json
 import aiohttp
 from aiohttp import web
-from aiohttp_jrpc import Service
+from aiohttp_jrpc import Service, jrpc_errorhandler_middleware
 
 PARSE_ERROR = {
     'jsonrpc': '2.0', 'id': None,
@@ -21,6 +21,10 @@ NOT_FOUND = {
 INVALID_PARAMS = {
     'jsonrpc': '2.0', 'id': None,
     'error': {'code': -32602, 'mesage': 'Invalid params'}
+}
+INTERNAL_ERROR = {
+    'jsonrpc': '2.0', 'id': None,
+    'error': {'code': -32603, 'mesage': 'Internal error'}
 }
 
 REQ_SCHEM = {
@@ -40,6 +44,9 @@ class MyService(Service):
         if data["data"] == "TEST":
             return {"status": "OK"}
         return {"status": "ok"}
+
+    def err_exc(self, ctx, data):
+        raise Exception("test middleware, exception is ok")
 
 
 class TestErrors(unittest.TestCase):
@@ -65,7 +72,8 @@ class TestErrors(unittest.TestCase):
 
     @asyncio.coroutine
     def create_server(self):
-        app = web.Application(loop=self.loop)
+        app = web.Application(loop=self.loop,
+                              middlewares=[jrpc_errorhandler_middleware])
 
         port = self.find_unused_port()
         self.handler = app.make_handler(
@@ -111,6 +119,8 @@ class TestErrors(unittest.TestCase):
                                           self.create_request("not_found")))
         self.loop.run_until_complete(post(INVALID_PARAMS,
                                           self.create_request("v_hello")))
+        self.loop.run_until_complete(post(INTERNAL_ERROR,
+                                          self.create_request("err_exc")))
 
     def test_validate(self):
         @asyncio.coroutine

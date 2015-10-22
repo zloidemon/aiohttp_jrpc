@@ -8,8 +8,11 @@ test: flake
 vtest: flake
 	py.test -s ./tests/
 
+build:
+	python setup.py sdist bdist_wheel
+
 cov cover coverage: flake
-	py.test -s ./tests/ --cov=aiohttp_jrpc --cov=tests --cov-report=html --cov-report=term
+	py.test -s -v ./tests/ --cov=aiohttp_jrpc --cov=tests --cov-report=term
 	@echo "open file://`pwd`/coverage/index.html"
 
 clean:
@@ -22,9 +25,9 @@ clean:
 	rm -f `find . -type f -name '*.orig' `
 	rm -f `find . -type f -name '*.rej' `
 	rm -f .coverage
-	rm -rf coverage
 	rm -rf build
 	rm -rf cover
+	rm -fr dist
 	python setup.py clean
 
 .PHONY: all build venv flake test vtest testloop cov clean

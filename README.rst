@@ -5,7 +5,7 @@ aiohttp_jrpc
 .. image:: https://coveralls.io/repos/zloidemon/aiohttp_jrpc/badge.svg
     :target: https://coveralls.io/r/zloidemon/aiohttp_jrpc
 
-jsonrpc_ protocol implementation for `aiohttp.web`__ .
+jsonrpc_ protocol implementation for `aiohttp.web`__.
 
 __ aiohttp_web_
 
@@ -33,10 +33,16 @@ Example
                 return {"status": "hi"}
             return {"status": data}
 
+        def error(self, ctx, data):
+            raise Exception("Error which will catch middleware")
+
+        def no_valid(self, ctx, data):
+        """ Method without validation incommig data """
+            return {"status": "ok"}
 
     @asyncio.coroutine
     def init(loop):
-        app = web.Application(loop=loop)
+        app = web.Application(loop=loop, middlewares=[jrpc_errorhandler_middleware])
         app.router.add_route('POST', "/api", MyJRPC)
 
         srv = yield from loop.create_server(app.make_handler(),
