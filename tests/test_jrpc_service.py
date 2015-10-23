@@ -71,6 +71,11 @@ class TestErrors(unittest.TestCase):
         return port
 
     @asyncio.coroutine
+    def request_wrapper(self, request):
+        """ It's acctually need for tests on travis I could not reproduce """
+        return (yield from MyService(request))
+
+    @asyncio.coroutine
     def create_server(self):
         app = web.Application(loop=self.loop,
                               middlewares=[jrpc_errorhandler_middleware])
@@ -78,7 +83,7 @@ class TestErrors(unittest.TestCase):
         port = self.find_unused_port()
         self.handler = app.make_handler(
             debug=False, keep_alive_on=False)
-        app.router.add_route('*', '/', MyService)
+        app.router.add_route('*', '/', self.request_wrapper)
         srv = yield from self.loop.create_server(
             self.handler, '127.0.0.1', port)
         url = "http://127.0.0.1:{}/".format(port)
