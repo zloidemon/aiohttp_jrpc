@@ -9,7 +9,7 @@ import asyncio
 import json
 import traceback
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 JSONRPC20 = {
     "type": "object",

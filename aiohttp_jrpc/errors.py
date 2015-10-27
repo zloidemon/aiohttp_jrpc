@@ -56,3 +56,16 @@ class JError(object):
             'id': self.rid,
             'error': {'code': -32603, 'message': 'Internal error'},
         })
+
+    def custom(self, code, message):
+        """
+        Specific server side errors use: -32000 to -32099
+        reserved for implementation-defined server-errors
+        """
+        if -32000 < code or -32099 > code:
+            code = -32603
+            message = 'Internal error'
+        return JResponse(jsonrpc={
+            'id': self.rid,
+            'error': {'code': code, 'message': message},
+        })

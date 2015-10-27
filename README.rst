@@ -4,6 +4,8 @@ aiohttp_jrpc
     :target: https://travis-ci.org/zloidemon/aiohttp_jrpc
 .. image:: https://coveralls.io/repos/zloidemon/aiohttp_jrpc/badge.svg
     :target: https://coveralls.io/r/zloidemon/aiohttp_jrpc
+.. image:: https://badge.fury.io/py/aiohttp_jrpc.svg
+    :target: https://badge.fury.io/py/aiohttp_jrpc
 
 jsonrpc_ protocol implementation for `aiohttp.web`__.
 
@@ -17,7 +19,7 @@ Example
 
     import asyncio
     from aiohttp import web
-    from aiohttp_jrpc import Service
+    from aiohttp_jrpc import Service, JError, jrpc_errorhandler_middleware
 
     SCH = {
         "type": "object",
@@ -25,6 +27,17 @@ Example
             "data": {"type": "string"},
         },
     }
+
+    @asyncio.coroutine
+    def custom_errorhandler_middleware(app, handler):
+        @asyncio.coroutine
+        def middleware(request):
+            try:
+                return (yield from handler(request))
+            except Exception:
+                """ Custom errors: -32000 to -32099 """
+                return JError().custom(-32000, "Example error")
+        return middleware
 
     class MyJRPC(Service):
         @Service.valid(SCH)
@@ -37,12 +50,13 @@ Example
             raise Exception("Error which will catch middleware")
 
         def no_valid(self, ctx, data):
-        """ Method without validation incommig data """
+            """ Method without validation incommig data """
             return {"status": "ok"}
 
     @asyncio.coroutine
     def init(loop):
         app = web.Application(loop=loop, middlewares=[jrpc_errorhandler_middleware])
+        #app = web.Application(loop=loop, middlewares=[custom_errorhandler_middleware])
         app.router.add_route('POST', "/api", MyJRPC)
 
         srv = yield from loop.create_server(app.make_handler(),
@@ -56,7 +70,6 @@ Example
         loop.run_forever()
     except KeyboardInterrupt:
         pass
-
 
 License
 -------

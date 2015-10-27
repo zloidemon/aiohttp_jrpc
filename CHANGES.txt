@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.0.3 (2015-10-27)
+
+* Fix messages of protocol errors
+* Fix tests and add tests for custom errors
+* Fix example bugs
+* Added custom middleware to example for handle errors
+
 0.0.2 (2015-10-22)
 
 * Added middleware to catch exceptions
