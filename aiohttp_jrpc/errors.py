@@ -26,33 +26,33 @@ class JError(object):
         """ json parsing error """
         return JResponse(jsonrpc={
             'id': self.rid,
-            'error': {'code': -32700, 'mesage': 'Parse error'},
+            'error': {'code': -32700, 'message': 'Parse error'},
         })
 
     def request(self):
         """ incorrect json rpc request """
         return JResponse(jsonrpc={
             'id': self.rid,
-            'error': {'code': -32600, 'mesage': 'Invalid Request'},
+            'error': {'code': -32600, 'message': 'Invalid Request'},
         })
 
     def method(self):
         """ Not found method on the server """
         return JResponse(jsonrpc={
             'id': self.rid,
-            'error': {'code': -32601, 'mesage': 'Method not found'},
+            'error': {'code': -32601, 'message': 'Method not found'},
         })
 
     def params(self):
         """ Incorrect params (used in validate) """
         return JResponse(jsonrpc={
             'id': self.rid,
-            'error': {'code': -32602, 'mesage': 'Invalid params'},
+            'error': {'code': -32602, 'message': 'Invalid params'},
         })
 
     def internal(self):
         """ Internal server error, actually send on every unknow exception """
         return JResponse(jsonrpc={
             'id': self.rid,
-            'error': {'code': -32603, 'mesage': 'Internal error'},
+            'error': {'code': -32603, 'message': 'Internal error'},
         })
