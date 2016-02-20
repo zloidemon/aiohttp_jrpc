@@ -4,83 +4,11 @@ import unittest
 import json
 import aiohttp
 from aiohttp import web
-from aiohttp_jrpc import Service, JError, jrpc_errorhandler_middleware
-
-PARSE_ERROR = {
-    'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32700, 'message': 'Parse error'}
-}
-INVALID_REQUEST = {
-    'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32600, 'message': 'Invalid Request'}
-}
-NOT_FOUND = {
-    'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32601, 'message': 'Method not found'}
-}
-INVALID_PARAMS = {
-    'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32602, 'message': 'Invalid params'}
-}
-INTERNAL_ERROR = {
-    'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32603, 'message': 'Internal error'}
-}
-CUSTOM_ERROR_GT = {
-    'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32000, 'message': 'Custom error gt'}
-}
-CUSTOM_ERROR_LT = {
-    'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32099, 'message': 'Custom error lt'}
-}
-
-REQ_SCHEM = {
-    "type": "object",
-    "properties": {
-        "data": {"type": "string"},
-    }
-}
-
-
-@asyncio.coroutine
-def custom_errorhandler_middleware(app, handler):
-    @asyncio.coroutine
-    def middleware(request):
-        try:
-            return (yield from handler(request))
-        except AttributeError:
-            return JError().custom(-32000, 'Custom error gt')
-        except LookupError:
-            return JError().custom(-32099, 'Custom error lt')
-        except NameError:
-            return JError().custom(-32100, 'Bad custom error')
-        except Exception:
-            return JError().custom(-31999, 'Bad custom error')
-    return middleware
-
-
-class MyService(Service):
-    def hello(self, ctx, data):
-        return {"a": "b"}
-
-    @Service.valid(REQ_SCHEM)
-    def v_hello(self, ctx, data):
-        if data["data"] == "TEST":
-            return {"status": "OK"}
-        return {"status": "ok"}
-
-    def err_exc(self, ctx, data):
-        raise Exception("test middleware, exception is ok")
-
-    def err_exc2(self, ctx, data):
-        raise NameError("test custom middleware, exception is ok")
-
-    def err_gt(self, ctx, data):
-        raise AttributeError("test custom middleware, exception is ok")
-
-    def err_lt(self, ctx, data):
-        raise LookupError("test custom middleware, exception is ok")
+from aiohttp_jrpc import jrpc_errorhandler_middleware
+from utils import custom_errorhandler_middleware, MyService
+from utils import create_response, create_request
+from utils import (PARSE_ERROR, INVALID_REQUEST, NOT_FOUND, INVALID_PARAMS,
+                   INTERNAL_ERROR, CUSTOM_ERROR_GT, CUSTOM_ERROR_LT)
 
 
 class TestService(unittest.TestCase):
@@ -124,15 +52,6 @@ class TestService(unittest.TestCase):
         self.srv = srv
         return app, srv, url
 
-    def create_request(self, method, rid=None, params=None):
-        return {
-            "jsonrpc": "2.0", "id": rid,
-            "method": method, "params": params
-        }
-
-    def create_response(self, rid=None, result=None):
-        return {"jsonrpc": "2.0", "id": rid, "result": result}
-
     def test_errors(self):
 
         @asyncio.coroutine
@@ -157,11 +76,11 @@ class TestService(unittest.TestCase):
         self.loop.run_until_complete(post(INVALID_REQUEST))
         self.loop.run_until_complete(post(INVALID_REQUEST, {"example": None}))
         self.loop.run_until_complete(post(NOT_FOUND,
-                                          self.create_request("not_found")))
+                                          create_request("not_found")))
         self.loop.run_until_complete(post(INVALID_PARAMS,
-                                          self.create_request("v_hello")))
+                                          create_request("v_hello")))
         self.loop.run_until_complete(post(INTERNAL_ERROR,
-                                          self.create_request("err_exc")))
+                                          create_request("err_exc")))
 
     def test_custom_error(self):
 
@@ -175,13 +94,13 @@ class TestService(unittest.TestCase):
             self.assertEqual(None, (yield from resp.release()))
 
         self.loop.run_until_complete(post(INTERNAL_ERROR,
-                                          self.create_request("err_exc")))
+                                          create_request("err_exc")))
         self.loop.run_until_complete(post(INTERNAL_ERROR,
-                                          self.create_request("err_exc2")))
+                                          create_request("err_exc2")))
         self.loop.run_until_complete(post(CUSTOM_ERROR_GT,
-                                          self.create_request("err_gt")))
+                                          create_request("err_gt")))
         self.loop.run_until_complete(post(CUSTOM_ERROR_LT,
-                                          self.create_request("err_lt")))
+                                          create_request("err_lt")))
 
     def test_validate(self):
         @asyncio.coroutine
@@ -193,25 +112,25 @@ class TestService(unittest.TestCase):
             self.assertEqual(None, (yield from resp.release()))
 
         self.loop.run_until_complete(post(INVALID_PARAMS,
-                                          self.create_request("v_hello")))
+                                          create_request("v_hello")))
         self.loop.run_until_complete(
-            post(self.create_response(result={"status": "ok"}),
-                 self.create_request("v_hello", params={"data": "ok"})))
+            post(create_response(result={"status": "ok"}),
+                 create_request("v_hello", params={"data": "ok"})))
         self.loop.run_until_complete(
-            post(self.create_response(1234, {"status": "ok"}),
-                 self.create_request("v_hello", 1234, {"data": "ok"})))
+            post(create_response(1234, {"status": "ok"}),
+                 create_request("v_hello", 1234, {"data": "ok"})))
         self.loop.run_until_complete(
-            post(self.create_response(None, {"status": "ok"}),
-                 self.create_request("v_hello", None, {"data": "ok"})))
+            post(create_response(None, {"status": "ok"}),
+                 create_request("v_hello", None, {"data": "ok"})))
         self.loop.run_until_complete(
-            post(self.create_response("1", {"status": "OK"}),
-                 self.create_request("v_hello", "1", {"data": "TEST"})))
+            post(create_response("1", {"status": "OK"}),
+                 create_request("v_hello", "1", {"data": "TEST"})))
         self.loop.run_until_complete(
-            post(self.create_response(True, {"status": "ok"}),
-                 self.create_request("v_hello", True, {"data": "ok"})))
+            post(create_response(True, {"status": "ok"}),
+                 create_request("v_hello", True, {"data": "ok"})))
         self.loop.run_until_complete(
-            post(self.create_response(False, {"status": "ok"}),
-                 self.create_request("v_hello", False, {"data": "ok"})))
+            post(create_response(False, {"status": "ok"}),
+                 create_request("v_hello", False, {"data": "ok"})))
 
     def test_without_validate(self):
         @asyncio.coroutine
@@ -223,11 +142,11 @@ class TestService(unittest.TestCase):
             self.assertEqual(None, (yield from resp.release()))
 
         self.loop.run_until_complete(
-            post(self.create_response(None, {"a": "b"}),
-                 self.create_request("hello")))
+            post(create_response(None, {"a": "b"}),
+                 create_request("hello")))
         self.loop.run_until_complete(
-            post(self.create_response(123, {"a": "b"}),
-                 self.create_request("hello", 123)))
+            post(create_response(123, {"a": "b"}),
+                 create_request("hello", 123)))
         self.loop.run_until_complete(
-            post(self.create_response("123", {"a": "b"}),
-                 self.create_request("hello", "123")))
+            post(create_response("123", {"a": "b"}),
+                 create_request("hello", "123")))

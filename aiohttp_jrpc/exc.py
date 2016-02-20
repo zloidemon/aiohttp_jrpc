@@ -28,3 +28,9 @@ class InternalError(Error):
     """
     Reserved for implementation-defined server-errors.
     """
+
+
+class InvalidResponse(Error):
+    """
+    The JSON sent is not a valid Response object.
+    """

@@ -12,8 +12,8 @@ jsonrpc_ protocol implementation for `aiohttp.web`__.
 __ aiohttp_web_
 
 
-Example
--------
+Example server
+--------------
 
 .. code:: python
 
@@ -70,6 +70,33 @@ Example
         loop.run_forever()
     except KeyboardInterrupt:
         pass
+
+Example client
+--------------
+
+.. code:: python
+
+    import asyncio
+    import aiohttp
+    from aiohttp_jrpc import Client,InvalidResponse
+
+    Remote = Client('http://localhost:8080/api')
+
+    @asyncio.coroutine
+    def rpc_call():
+        try:
+            rsp = yield from Remote.request('hello', {'data': 'hello'})
+            return rsp
+        except InvalidResponse as err:
+            return err
+        except Exception as err:
+            return err
+        return False
+
+    loop = asyncio.get_event_loop()
+    content = loop.run_until_complete(rpc_call())
+    print(content.result)
+    loop.close()
 
 License
 -------

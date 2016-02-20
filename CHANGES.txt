@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+0.1.0 (2016-02-20)
+
+* Added client and tests
+* Changed BSD v3 to BSD v2 license
+
 0.0.3 (2015-10-27)
 
 * Fix messages of protocol errors
