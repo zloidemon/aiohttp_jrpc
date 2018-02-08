@@ -1,0 +1,5 @@
+aiohttp-jrpc (0.1.0) stretch; urgency=medium
+
+  * Initial Release
+
+ -- André Roth <neolynx@gmail.com>  Thu, 08 Feb 2018 19:05:27 +0100
