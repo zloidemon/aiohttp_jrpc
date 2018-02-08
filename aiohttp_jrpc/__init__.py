@@ -62,7 +62,7 @@ def jrpc_errorhandler_middleware(app, handler):
 def decode(request):
     """ Get/decode/validate json from request """
     try:
-        data = yield from request.json(loader=json.loads)
+        data = yield from request.json()
     except Exception as err:
         raise ParseError(err)
 
@@ -187,7 +187,7 @@ class Client(object):
                 "Error, server retunrned: {status}".format(status=resp.status))
 
         try:
-            data = yield from resp.json()
+            data = yield from resp.json(loader=json.loads)
         except Exception as err:
             raise InvalidResponse(err)
 
