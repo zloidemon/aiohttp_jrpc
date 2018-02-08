@@ -3,6 +3,8 @@
 
 class Error(Exception):
     """Generic error class."""
+    def __init__(self, msg):
+        Exception.__init__(self, msg)
 
 
 class ParseError(Error):

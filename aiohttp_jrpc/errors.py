@@ -22,39 +22,39 @@ class JError(object):
         else:
             self.rid = rid
 
-    def parse(self):
+    def parse(self, exc="unknown"):
         """ json parsing error """
         return JResponse(jsonrpc={
             'id': self.rid,
-            'error': {'code': -32700, 'message': 'Parse error'},
+            'error': {'code': -32700, 'message': 'Parse error: ' + str(exc)},
         })
 
-    def request(self):
+    def request(self, exc="unknown"):
         """ incorrect json rpc request """
         return JResponse(jsonrpc={
             'id': self.rid,
-            'error': {'code': -32600, 'message': 'Invalid Request'},
+            'error': {'code': -32600, 'message': 'Invalid Request: ' + str(exc)},
         })
 
-    def method(self):
+    def method(self, exc="unknown"):
         """ Not found method on the server """
         return JResponse(jsonrpc={
             'id': self.rid,
-            'error': {'code': -32601, 'message': 'Method not found'},
+            'error': {'code': -32601, 'message': 'Method not found: ' + str(exc)},
         })
 
-    def params(self):
+    def params(self, exc="unknown"):
         """ Incorrect params (used in validate) """
         return JResponse(jsonrpc={
             'id': self.rid,
-            'error': {'code': -32602, 'message': 'Invalid params'},
+            'error': {'code': -32602, 'message': 'Invalid params: ' + str(exc)},
         })
 
-    def internal(self):
+    def internal(self, exc="unknown"):
         """ Internal server error, actually send on every unknow exception """
         return JResponse(jsonrpc={
             'id': self.rid,
-            'error': {'code': -32603, 'message': 'Internal error'},
+            'error': {'code': -32603, 'message': 'Internal error: ' + str(exc)},
         })
 
     def custom(self, code, message):
