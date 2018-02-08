@@ -7,7 +7,7 @@ def read_version():
     regexp = re.compile(r"^__version__\W*=\W*'([\d.]+)'")
     init_py = os.path.join(os.path.dirname(__file__),
                            'aiohttp_jrpc', '__init__.py')
-    with open(init_py) as fp:
+    with open(init_py, encoding="utf-8") as fp:
         for line in fp:
             match = regexp.match(line)
             if match is not None:
@@ -17,7 +17,7 @@ def read_version():
 
 
 def read(f):
-    return open(os.path.join(os.path.dirname(__file__), f)).read().strip()
+    return open(os.path.join(os.path.dirname(__file__), f), encoding="utf-8").read().strip()
 
 install_requires = ['aiohttp>=0.17', 'validictory']
 tests_require = install_requires + ['pytest']
