@@ -39,12 +39,10 @@ REQ_SCHEM = {
 }
 
 
-@asyncio.coroutine
-def custom_errorhandler_middleware(app, handler):
-    @asyncio.coroutine
-    def middleware(request):
+async def custom_errorhandler_middleware(app, handler):
+    async def middleware(request):
         try:
-            return (yield from handler(request))
+            return (await handler(request))
         except AttributeError:
             return JError().custom(-32000, 'Custom error gt')
         except LookupError:

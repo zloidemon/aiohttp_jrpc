@@ -28,13 +28,11 @@ class TestClient(unittest.TestCase):
         sock.close()
         return port
 
-    @asyncio.coroutine
-    def request_wrapper(self, request):
+    async def request_wrapper(self, request):
         """ It's acctually need for tests on travis I could not reproduce """
-        return (yield from MyService(request))
+        return (await MyService(request))
 
-    @asyncio.coroutine
-    def create_server(self, middlewares=[]):
+    async def create_server(self, middlewares=[]):
         app = web.Application(loop=self.loop,
                               middlewares=middlewares)
 
@@ -42,7 +40,7 @@ class TestClient(unittest.TestCase):
         self.handler = app.make_handler(
             debug=False, keep_alive_on=False)
         app.router.add_route('*', '/', self.request_wrapper)
-        srv = yield from self.loop.create_server(
+        srv = await self.loop.create_server(
             self.handler, '127.0.0.1', port)
         url = "http://127.0.0.1:{}/".format(port)
         self.srv = srv
@@ -50,9 +48,8 @@ class TestClient(unittest.TestCase):
         return app, srv, client
 
     def test_validate(self):
-        @asyncio.coroutine
-        def call(check, method, data=None, id=None):
-            app, srv, client = yield from self.create_server(middlewares=[
+        async def call(check, method, data=None, id=None):
+            app, srv, client = await self.create_server(middlewares=[
                 custom_errorhandler_middleware])
 
             resp = Response(**check)
@@ -60,7 +57,7 @@ class TestClient(unittest.TestCase):
             if not id:
                 id = resp.id
 
-            ret = yield from client.call(method, data, id=id)
+            ret = await client.call(method, data, id=id)
 
             self.assertEqual(resp.error, ret.error)
             self.assertEqual(resp.result, ret.result)
