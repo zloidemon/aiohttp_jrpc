@@ -46,23 +46,20 @@ ERR_JSONRPC20 = {
 }
 
 
-@asyncio.coroutine
-def jrpc_errorhandler_middleware(app, handler):
-    @asyncio.coroutine
-    def middleware(request):
+async def jrpc_errorhandler_middleware(app, handler):
+    async def middleware(request):
         try:
-            return (yield from handler(request))
+            return (await handler(request))
         except Exception:
             traceback.print_exc()
             return JError().internal()
     return middleware
 
 
-@asyncio.coroutine
-def decode(request):
+async def decode(request):
     """ Get/decode/validate json from request """
     try:
-        data = yield from request.json(loader=json.loads)
+        data = await request.json()
     except Exception as err:
         raise ParseError(err)
 
@@ -99,11 +96,10 @@ class Service(object):
             return d_func
         return dec
 
-    @asyncio.coroutine
-    def __run(self, ctx):
+    async def __run(self, ctx):
         """ Run service """
         try:
-            data = yield from decode(ctx)
+            data = await decode(ctx)
         except ParseError:
             return JError().parse()
         except InvalidRequest:
@@ -118,7 +114,7 @@ class Service(object):
             return JError(data).method()
 
         try:
-            resp = yield from i_app(self, ctx, data)
+            resp = await i_app(self, ctx, data)
         except InvalidParams:
             return JError(data).params()
         except InternalError:
@@ -172,12 +168,11 @@ class Client(object):
 
         return data
 
-    @asyncio.coroutine
-    def call(self, method, params=None, id=None, schem=None):
+    async def call(self, method, params=None, id=None, schem=None):
         if not id:
             id = uuid4().hex
         try:
-            resp = yield from self.client.post(
+            resp = await self.client.post(
                    self.url, data=self.__encode(method, params, id))
         except Exception as err:
             raise Exception(err)
@@ -187,7 +182,7 @@ class Client(object):
                 "Error, server retunrned: {status}".format(status=resp.status))
 
         try:
-            data = yield from resp.json()
+            data = await resp.json()
         except Exception as err:
             raise InvalidResponse(err)
 

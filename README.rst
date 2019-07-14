@@ -28,12 +28,10 @@ Example server
         },
     }
 
-    @asyncio.coroutine
-    def custom_errorhandler_middleware(app, handler):
-        @asyncio.coroutine
-        def middleware(request):
+    async def custom_errorhandler_middleware(app, handler):
+        async def middleware(request):
             try:
-                return (yield from handler(request))
+                return (await handler(request))
             except Exception:
                 """ Custom errors: -32000 to -32099 """
                 return JError().custom(-32000, "Example error")
@@ -53,13 +51,12 @@ Example server
             """ Method without validation incommig data """
             return {"status": "ok"}
 
-    @asyncio.coroutine
-    def init(loop):
+    async def init(loop):
         app = web.Application(loop=loop, middlewares=[jrpc_errorhandler_middleware])
         #app = web.Application(loop=loop, middlewares=[custom_errorhandler_middleware])
         app.router.add_route('POST', "/api", MyJRPC)
 
-        srv = yield from loop.create_server(app.make_handler(),
+        srv = await loop.create_server(app.make_handler(),
                                             "127.0.0.1", 8080)
         print("Server started at http://127.0.0.1:8080")
         return srv
@@ -82,10 +79,9 @@ Example client
 
     Remote = Client('http://localhost:8080/api')
 
-    @asyncio.coroutine
-    def rpc_call():
+    async def rpc_call():
         try:
-            rsp = yield from Remote.request('hello', {'data': 'hello'})
+            rsp = await Remote.request('hello', {'data': 'hello'})
             return rsp
         except InvalidResponse as err:
             return err

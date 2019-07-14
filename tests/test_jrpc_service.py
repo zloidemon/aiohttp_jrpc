@@ -32,13 +32,11 @@ class TestService(unittest.TestCase):
         sock.close()
         return port
 
-    @asyncio.coroutine
-    def request_wrapper(self, request):
+    async def request_wrapper(self, request):
         """ It's acctually need for tests on travis I could not reproduce """
-        return (yield from MyService(request))
+        return (await MyService(request))
 
-    @asyncio.coroutine
-    def create_server(self, middlewares=[]):
+    async def create_server(self, middlewares=[]):
         app = web.Application(loop=self.loop,
                               middlewares=middlewares)
 
@@ -46,7 +44,7 @@ class TestService(unittest.TestCase):
         self.handler = app.make_handler(
             debug=False, keep_alive_on=False)
         app.router.add_route('*', '/', self.request_wrapper)
-        srv = yield from self.loop.create_server(
+        srv = await self.loop.create_server(
             self.handler, '127.0.0.1', port)
         url = "http://127.0.0.1:{}/".format(port)
         self.srv = srv
@@ -54,23 +52,21 @@ class TestService(unittest.TestCase):
 
     def test_errors(self):
 
-        @asyncio.coroutine
-        def get(check):
-            app, srv, url = yield from self.create_server(middlewares=[
+        async def get(check):
+            app, srv, url = await self.create_server(middlewares=[
                 jrpc_errorhandler_middleware])
-            resp = yield from self.client.get(url)
+            resp = await self.client.get(url)
             self.assertEqual(200, resp.status)
-            self.assertEqual(check, (yield from resp.json()))
-            self.assertEqual(None, (yield from resp.release()))
+            self.assertEqual(check, (await resp.json()))
+            self.assertEqual(None, (await resp.release()))
 
-        @asyncio.coroutine
-        def post(check, data=None):
-            app, srv, url = yield from self.create_server(middlewares=[
+        async def post(check, data=None):
+            app, srv, url = await self.create_server(middlewares=[
                 jrpc_errorhandler_middleware])
-            resp = yield from self.client.post(url, data=json.dumps(data))
+            resp = await self.client.post(url, data=json.dumps(data))
             self.assertEqual(200, resp.status)
-            self.assertEqual(check, (yield from resp.json()))
-            self.assertEqual(None, (yield from resp.release()))
+            self.assertEqual(check, (await resp.json()))
+            self.assertEqual(None, (await resp.release()))
 
         self.loop.run_until_complete(get(PARSE_ERROR))
         self.loop.run_until_complete(post(INVALID_REQUEST))
@@ -84,14 +80,13 @@ class TestService(unittest.TestCase):
 
     def test_custom_error(self):
 
-        @asyncio.coroutine
-        def post(check, data=None):
-            app, srv, url = yield from self.create_server(middlewares=[
+        async def post(check, data=None):
+            app, srv, url = await self.create_server(middlewares=[
                 custom_errorhandler_middleware])
-            resp = yield from self.client.post(url, data=json.dumps(data))
+            resp = await self.client.post(url, data=json.dumps(data))
             self.assertEqual(200, resp.status)
-            self.assertEqual(check, (yield from resp.json()))
-            self.assertEqual(None, (yield from resp.release()))
+            self.assertEqual(check, (await resp.json()))
+            self.assertEqual(None, (await resp.release()))
 
         self.loop.run_until_complete(post(INTERNAL_ERROR,
                                           create_request("err_exc")))
@@ -103,13 +98,12 @@ class TestService(unittest.TestCase):
                                           create_request("err_lt")))
 
     def test_validate(self):
-        @asyncio.coroutine
-        def post(check, data=None):
-            app, srv, url = yield from self.create_server()
-            resp = yield from self.client.post(url, data=json.dumps(data))
+        async def post(check, data=None):
+            app, srv, url = await self.create_server()
+            resp = await self.client.post(url, data=json.dumps(data))
             self.assertEqual(200, resp.status)
-            self.assertEqual(check, (yield from resp.json()))
-            self.assertEqual(None, (yield from resp.release()))
+            self.assertEqual(check, (await resp.json()))
+            self.assertEqual(None, (await resp.release()))
 
         self.loop.run_until_complete(post(INVALID_PARAMS,
                                           create_request("v_hello")))
@@ -133,13 +127,12 @@ class TestService(unittest.TestCase):
                  create_request("v_hello", False, {"data": "ok"})))
 
     def test_without_validate(self):
-        @asyncio.coroutine
-        def post(check, data=None):
-            app, srv, url = yield from self.create_server()
-            resp = yield from self.client.post(url, data=json.dumps(data))
+        async def post(check, data=None):
+            app, srv, url = await self.create_server()
+            resp = await self.client.post(url, data=json.dumps(data))
             self.assertEqual(200, resp.status)
-            self.assertEqual(check, (yield from resp.json()))
-            self.assertEqual(None, (yield from resp.release()))
+            self.assertEqual(check, (await resp.json()))
+            self.assertEqual(None, (await resp.release()))
 
         self.loop.run_until_complete(
             post(create_response(None, {"a": "b"}),

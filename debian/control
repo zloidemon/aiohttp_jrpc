@@ -1,0 +1,11 @@
+Source: aiohttp-jrpc
+Maintainer: Veniamin Gvozdikov <g.veniamin@googlemail.com>
+Section: python
+Priority: optional
+Build-Depends: debhelper (>= 7), dh-python, python3-setuptools, python3-all, git
+Standards-Version: 3.9.7
+
+Package: python3-aiohttp-jrpc
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}, python3-aiohttp
+Description: aiohttp jsonrpc service
