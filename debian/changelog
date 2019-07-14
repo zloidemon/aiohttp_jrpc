@@ -1,3 +1,13 @@
+aiohttp-jrpc (0.1.0-1) stable; urgency=medium
+
+  * use async instead of coroutine
+  * fix json API call in Response and Request
+  * provide reason in error exceptions
+  * open files with utf-8 encoding
+  * fix logic in JError.custom
+
+ -- André Roth <neolynx@gmail.com>  Sun, 14 Jul 2019 15:25:13 +0200
+
 aiohttp-jrpc (0.1.0) stretch; urgency=medium
 
   * Initial Release
