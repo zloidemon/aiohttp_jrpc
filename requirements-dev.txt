@@ -2,6 +2,7 @@
 aiohttp
 coverage
 pep8
+pycodestyle
 pyflakes
 pytest
 pytest-cov
