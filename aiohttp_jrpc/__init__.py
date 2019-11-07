@@ -1,12 +1,18 @@
 """ Simple JSON-RPC 2.0 protocol for aiohttp"""
-from .exc import (ParseError, InvalidRequest, InvalidParams,
-                  InternalError, InvalidResponse)
+from .exc import (
+    InternalError,
+    InvalidParams,
+    InvalidRequest,
+    InvalidResponse,
+    ParseError,
+)
 from .errors import JError, JResponse
 
 from validictory import validate, ValidationError, SchemaError
 from functools import wraps
 from uuid import uuid4
 from aiohttp import ClientSession
+from aiohttp.web import middleware
 import asyncio
 import json
 import traceback
@@ -46,14 +52,13 @@ ERR_JSONRPC20 = {
 }
 
 
-async def jrpc_errorhandler_middleware(app, handler):
-    async def middleware(request):
-        try:
-            return (await handler(request))
-        except Exception:
-            traceback.print_exc()
-            return JError().internal()
-    return middleware
+@middleware
+async def jrpc_errorhandler_middleware(request, handler):
+    try:
+        return (await handler(request))
+    except Exception:
+        traceback.print_exc()
+        return JError().internal()
 
 
 async def decode(request):
@@ -151,9 +156,6 @@ class Client(object):
         self.client = ClientSession(
                           loop=loop,
                           headers={'content-type': 'application/json'})
-
-    def __del__(self):
-        self.client.close()
 
     def __encode(self, method, params=None, id=None):
         try:

@@ -7,8 +7,17 @@ from aiohttp import web
 from aiohttp_jrpc import jrpc_errorhandler_middleware
 from utils import custom_errorhandler_middleware, MyService
 from utils import create_response, create_request
-from utils import (PARSE_ERROR, INVALID_REQUEST, NOT_FOUND, INVALID_PARAMS,
-                   INTERNAL_ERROR, CUSTOM_ERROR_GT, CUSTOM_ERROR_LT)
+from utils import (
+    CUSTOM_ERROR_G,
+    CUSTOM_ERROR_GT,
+    CUSTOM_ERROR_L,
+    CUSTOM_ERROR_LT,
+    INTERNAL_ERROR,
+    INVALID_PARAMS,
+    INVALID_REQUEST,
+    NOT_FOUND,
+    PARSE_ERROR,
+)
 
 
 class TestService(unittest.TestCase):
@@ -19,10 +28,8 @@ class TestService(unittest.TestCase):
         self.client = aiohttp.ClientSession(loop=self.loop)
 
     def tearDown(self):
-        self.client.close()
-        self.loop.run_until_complete(self.handler.finish_connections())
-        self.srv.close()
-        self.loop.run_until_complete(self.srv.wait_closed())
+        self.loop.run_until_complete(self.client.close())
+        self.loop.run_until_complete(self.handler.cleanup())
         self.loop.close()
 
     def find_unused_port(self):
@@ -37,17 +44,18 @@ class TestService(unittest.TestCase):
         return (await MyService(request))
 
     async def create_server(self, middlewares=[]):
-        app = web.Application(loop=self.loop,
-                              middlewares=middlewares)
+        app = web.Application(middlewares=middlewares)
 
-        port = self.find_unused_port()
-        self.handler = app.make_handler(
-            debug=False, keep_alive_on=False)
         app.router.add_route('*', '/', self.request_wrapper)
-        srv = await self.loop.create_server(
+
+        self.handler = web.AppRunner(app)
+        port = self.find_unused_port()
+        await self.handler.setup()
+        srv = web.TCPSite(
             self.handler, '127.0.0.1', port)
         url = "http://127.0.0.1:{}/".format(port)
         self.srv = srv
+        await self.srv.start()
         return app, srv, url
 
     def test_errors(self):
@@ -88,9 +96,9 @@ class TestService(unittest.TestCase):
             self.assertEqual(check, (await resp.json()))
             self.assertEqual(None, (await resp.release()))
 
-        self.loop.run_until_complete(post(INTERNAL_ERROR,
+        self.loop.run_until_complete(post(CUSTOM_ERROR_G,
                                           create_request("err_exc")))
-        self.loop.run_until_complete(post(INTERNAL_ERROR,
+        self.loop.run_until_complete(post(CUSTOM_ERROR_L,
                                           create_request("err_exc2")))
         self.loop.run_until_complete(post(CUSTOM_ERROR_GT,
                                           create_request("err_gt")))

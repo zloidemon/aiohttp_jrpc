@@ -5,8 +5,14 @@ from aiohttp import web
 from aiohttp_jrpc import Client, Response
 from utils import custom_errorhandler_middleware, MyService
 from utils import create_response
-from utils import (NOT_FOUND, INVALID_PARAMS, INTERNAL_ERROR,
-                   CUSTOM_ERROR_GT, CUSTOM_ERROR_LT)
+from utils import (
+    NOT_FOUND,
+    INVALID_PARAMS,
+    CUSTOM_ERROR_GT,
+    CUSTOM_ERROR_LT,
+    CUSTOM_ERROR_G,
+    CUSTOM_ERROR_L,
+)
 
 
 class TestClient(unittest.TestCase):
@@ -16,9 +22,7 @@ class TestClient(unittest.TestCase):
         asyncio.set_event_loop(None)
 
     def tearDown(self):
-        self.loop.run_until_complete(self.handler.finish_connections())
-        self.srv.close()
-        self.loop.run_until_complete(self.srv.wait_closed())
+        self.loop.run_until_complete(self.handler.cleanup())
         self.loop.close()
 
     def find_unused_port(self):
@@ -33,18 +37,19 @@ class TestClient(unittest.TestCase):
         return (await MyService(request))
 
     async def create_server(self, middlewares=[]):
-        app = web.Application(loop=self.loop,
-                              middlewares=middlewares)
-
-        port = self.find_unused_port()
-        self.handler = app.make_handler(
-            debug=False, keep_alive_on=False)
+        app = web.Application(middlewares=middlewares)
         app.router.add_route('*', '/', self.request_wrapper)
-        srv = await self.loop.create_server(
+
+        self.handler = web.AppRunner(app)
+        port = self.find_unused_port()
+        await self.handler.setup()
+        srv = web.TCPSite(
             self.handler, '127.0.0.1', port)
         url = "http://127.0.0.1:{}/".format(port)
         self.srv = srv
         client = Client(url, loop=self.loop)
+        await self.srv.start()
+        self.client = client
         return app, srv, client
 
     def test_validate(self):
@@ -87,7 +92,7 @@ class TestClient(unittest.TestCase):
 
         self.loop.run_until_complete(call(NOT_FOUND, "not_found"))
         self.loop.run_until_complete(call(INVALID_PARAMS, "v_hello"))
-        self.loop.run_until_complete(call(INTERNAL_ERROR, "err_exc"))
-        self.loop.run_until_complete(call(INTERNAL_ERROR, "err_exc2"))
+        self.loop.run_until_complete(call(CUSTOM_ERROR_G, "err_exc"))
+        self.loop.run_until_complete(call(CUSTOM_ERROR_L, "err_exc2"))
         self.loop.run_until_complete(call(CUSTOM_ERROR_GT, "err_gt"))
         self.loop.run_until_complete(call(CUSTOM_ERROR_LT, "err_lt"))

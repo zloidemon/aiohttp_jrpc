@@ -1,3 +1,5 @@
+-e .
+aiohttp
 coverage
 pep8
 pyflakes

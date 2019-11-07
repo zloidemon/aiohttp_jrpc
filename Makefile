@@ -1,5 +1,5 @@
 flake:
-	pep8 aiohttp_jrpc tests/*.py
+	pycodestyle aiohttp_jrpc tests/*.py
 	pyflakes aiohttp_jrpc tests
 
 test: flake

@@ -1,36 +1,43 @@
-import asyncio
 from aiohttp_jrpc import Service, JError
+from aiohttp.web import middleware
 
 
 PARSE_ERROR = {
     'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32700, 'message': 'Parse error'}
+    'error': {'code': -32700, 'message': 'Parse error: unknown'}
 }
 INVALID_REQUEST = {
     'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32600, 'message': 'Invalid Request'}
+    'error': {'code': -32600, 'message': 'Invalid Request: unknown'}
 }
 NOT_FOUND = {
     'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32601, 'message': 'Method not found'}
+    'error': {'code': -32601, 'message': 'Method not found: unknown'}
 }
 INVALID_PARAMS = {
     'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32602, 'message': 'Invalid params'}
+    'error': {'code': -32602, 'message': 'Invalid params: unknown'}
 }
 INTERNAL_ERROR = {
     'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32603, 'message': 'Internal error'}
+    'error': {'code': -32603, 'message': 'Internal error: unknown'}
 }
 CUSTOM_ERROR_GT = {
     'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32000, 'message': 'Custom error gt'}
+    'error': {'code': -32603, 'message': 'Internal error'}
 }
 CUSTOM_ERROR_LT = {
     'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32099, 'message': 'Custom error lt'}
+    'error': {'code': -32603, 'message': 'Internal error'}
 }
-
+CUSTOM_ERROR_G = {
+    'jsonrpc': '2.0', 'id': None,
+    'error': {'code': -31999, 'message': 'Custom error g'}
+}
+CUSTOM_ERROR_L = {
+    'jsonrpc': '2.0', 'id': None,
+    'error': {'code': -32100, 'message': 'Custom error l'}
+}
 REQ_SCHEM = {
     "type": "object",
     "properties": {
@@ -39,19 +46,18 @@ REQ_SCHEM = {
 }
 
 
-async def custom_errorhandler_middleware(app, handler):
-    async def middleware(request):
-        try:
-            return (await handler(request))
-        except AttributeError:
-            return JError().custom(-32000, 'Custom error gt')
-        except LookupError:
-            return JError().custom(-32099, 'Custom error lt')
-        except NameError:
-            return JError().custom(-32100, 'Bad custom error')
-        except Exception:
-            return JError().custom(-31999, 'Bad custom error')
-    return middleware
+@middleware
+async def custom_errorhandler_middleware(request, handler):
+    try:
+        return (await handler(request))
+    except AttributeError:
+        return JError().custom(-32000, 'Custom error gt')
+    except LookupError:
+        return JError().custom(-32099, 'Custom error lt')
+    except NameError:
+        return JError().custom(-32100, 'Custom error l')
+    except Exception:
+        return JError().custom(-31999, 'Custom error g')
 
 
 class MyService(Service):
