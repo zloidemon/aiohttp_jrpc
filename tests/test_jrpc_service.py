@@ -8,15 +8,14 @@ from aiohttp_jrpc import jrpc_errorhandler_middleware
 from utils import custom_errorhandler_middleware, MyService
 from utils import create_response, create_request
 from utils import (
-    CUSTOM_ERROR_G,
     CUSTOM_ERROR_GT,
-    CUSTOM_ERROR_L,
     CUSTOM_ERROR_LT,
     INTERNAL_ERROR,
     INVALID_PARAMS,
     INVALID_REQUEST,
     NOT_FOUND,
     PARSE_ERROR,
+    SERVER_ERROR,
 )
 
 
@@ -96,9 +95,9 @@ class TestService(unittest.TestCase):
             self.assertEqual(check, (await resp.json()))
             self.assertEqual(None, (await resp.release()))
 
-        self.loop.run_until_complete(post(CUSTOM_ERROR_G,
+        self.loop.run_until_complete(post(SERVER_ERROR,
                                           create_request("err_exc")))
-        self.loop.run_until_complete(post(CUSTOM_ERROR_L,
+        self.loop.run_until_complete(post(INTERNAL_ERROR,
                                           create_request("err_exc2")))
         self.loop.run_until_complete(post(CUSTOM_ERROR_GT,
                                           create_request("err_gt")))
@@ -128,10 +127,10 @@ class TestService(unittest.TestCase):
             post(create_response("1", {"status": "OK"}),
                  create_request("v_hello", "1", {"data": "TEST"})))
         self.loop.run_until_complete(
-            post(create_response(True, {"status": "ok"}),
+            post(INVALID_REQUEST,
                  create_request("v_hello", True, {"data": "ok"})))
         self.loop.run_until_complete(
-            post(create_response(False, {"status": "ok"}),
+            post(INVALID_REQUEST,
                  create_request("v_hello", False, {"data": "ok"})))
 
     def test_without_validate(self):

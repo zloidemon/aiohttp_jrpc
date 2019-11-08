@@ -8,33 +8,65 @@ from .exc import (
 )
 from .errors import JError, JResponse
 
-from validictory import validate, ValidationError, SchemaError
+from jsonschema import validate, ValidationError, SchemaError, FormatChecker
 from functools import wraps
 from uuid import uuid4
-from aiohttp import ClientSession
 from aiohttp.web import middleware
 import asyncio
 import json
 import traceback
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 REQ_JSONRPC20 = {
     "type": "object",
     "properties": {
         "jsonrpc": {"pattern": r"2\.0"},
         "method": {"type": "string"},
-        "params": {"type": "any"},
-        "id": {"type": "any"},
+        "params": {
+            "anyOf": [
+                {"type": "array"},
+                {"type": "boolean"},
+                {"type": "integer"},
+                {"type": "null"},
+                {"type": "number"},
+                {"type": "object"},
+                {"type": "string"},
+            ]
+        },
+        "id": {
+            "anyOf": [
+                {"type": "null"},
+                {"type": "number"},
+                {"type": "string"},
+            ]
+        },
     },
+    "required": ["jsonrpc", "method", "id"],
 }
 RSP_JSONRPC20 = {
     "type": "object",
     "properties": {
         "jsonrpc": {"pattern": r"2\.0"},
-        "result": {"type": "any"},
-        "id": {"type": "any"},
+        "result": {
+            "anyOf": [
+                {"type": "array"},
+                {"type": "boolean"},
+                {"type": "integer"},
+                {"type": "null"},
+                {"type": "number"},
+                {"type": "object"},
+                {"type": "string"},
+            ]
+        },
+        "id": {
+            "anyOf": [
+                {"type": "string"},
+                {"type": "number"},
+            ]
+        },
     },
+    "required": ["jsonrpc", "result", "id"],
 }
 ERR_JSONRPC20 = {
     "type": "object",
@@ -45,10 +77,29 @@ ERR_JSONRPC20 = {
             "properties": {
                 "code": {"type": "number"},
                 "message": {"type": "string"},
-            }
+                "data": {
+                    "anyOf": [
+                        {"type": "array"},
+                        {"type": "boolean"},
+                        {"type": "integer"},
+                        {"type": "null"},
+                        {"type": "number"},
+                        {"type": "object"},
+                        {"type": "string"},
+                    ]
+                }
+            },
+            "required": ["code", "message"],
         },
-        "id": {"type": "any"},
+        "id": {
+            "anyOf": [
+                {"type": "null"},
+                {"type": "number"},
+                {"type": "string"},
+            ]
+        },
     },
+    "required": ["jsonrpc", "error", "id"],
 }
 
 
@@ -69,7 +120,7 @@ async def decode(request):
         raise ParseError(err)
 
     try:
-        validate(data, REQ_JSONRPC20)
+        validate(data, REQ_JSONRPC20, format_checker=FormatChecker())
     except ValidationError as err:
         raise InvalidRequest(err)
     except SchemaError as err:
@@ -92,7 +143,11 @@ class Service(object):
             @wraps(fun)
             def d_func(self, ctx, data, *a, **kw):
                 try:
-                    validate(data['params'], schema)
+                    validate(
+                        data['params'],
+                        schema,
+                        format_checker=FormatChecker()
+                    )
                 except ValidationError as err:
                     raise InvalidParams(err)
                 except SchemaError as err:
@@ -145,17 +200,13 @@ class Response(object):
 
 
 class Client(object):
-    def __init__(self, url, dumper=None, loop=None):
+    def __init__(self, client, url, dumper=None):
         self.url = url
         self.dumper = dumper
-        if not loop:
-            loop = asyncio.get_event_loop()
         if not self.dumper:
             self.dumper = json.dumps
 
-        self.client = ClientSession(
-                          loop=loop,
-                          headers={'content-type': 'application/json'})
+        self.client = client
 
     def __encode(self, method, params=None, id=None):
         try:
@@ -173,23 +224,23 @@ class Client(object):
     async def call(self, method, params=None, id=None, schem=None):
         if not id:
             id = uuid4().hex
-        try:
-            resp = await self.client.post(
-                   self.url, data=self.__encode(method, params, id))
-        except Exception as err:
-            raise Exception(err)
 
-        if 200 != resp.status:
-            raise InvalidResponse(
-                "Error, server retunrned: {status}".format(status=resp.status))
+        async with self.client.post(
+                self.url, data=self.__encode(method, params, id),
+                headers={'content-type': 'application/json'}) as resp:
+
+            if 200 != resp.status:
+                raise InvalidResponse(
+                    "Error, server retunrned: {status}".format(
+                        status=resp.status))
+
+            try:
+                data = await resp.json()
+            except Exception as err:
+                raise InvalidResponse(err)
 
         try:
-            data = await resp.json()
-        except Exception as err:
-            raise InvalidResponse(err)
-
-        try:
-            validate(data, ERR_JSONRPC20)
+            validate(data, ERR_JSONRPC20, format_checker=FormatChecker())
             return Response(**data)
         except ValidationError:
             # Passing data to validate response.
@@ -199,7 +250,7 @@ class Client(object):
             raise InvalidResponse(err)
 
         try:
-            validate(data, RSP_JSONRPC20)
+            validate(data, RSP_JSONRPC20, format_checker=FormatChecker())
             if id != data['id']:
                 raise InvalidResponse(
                        "Rsponse id {local} not equal {remote}".format(
@@ -209,7 +260,7 @@ class Client(object):
 
         if schem:
             try:
-                validate(data['result'], schem)
+                validate(data['result'], schem, format_checker=FormatChecker())
             except ValidationError as err:
                 raise InvalidResponse(err)
             except Exception as err:

@@ -22,7 +22,7 @@ def read(f):
     ).read().strip()
 
 
-install_requires = ['aiohttp>=0.17', 'validictory']
+install_requires = ['aiohttp>=0.17', 'jsonschema']
 tests_require = install_requires + ['pytest']
 
 

@@ -1,17 +1,18 @@
 import asyncio
 import socket
 import unittest
-from aiohttp import web
+from aiohttp import ClientSession, web
 from aiohttp_jrpc import Client, Response
 from utils import custom_errorhandler_middleware, MyService
 from utils import create_response
 from utils import (
-    NOT_FOUND,
-    INVALID_PARAMS,
     CUSTOM_ERROR_GT,
     CUSTOM_ERROR_LT,
-    CUSTOM_ERROR_G,
-    CUSTOM_ERROR_L,
+    INTERNAL_ERROR,
+    INVALID_PARAMS,
+    INVALID_REQUEST,
+    NOT_FOUND,
+    SERVER_ERROR,
 )
 
 
@@ -45,16 +46,14 @@ class TestClient(unittest.TestCase):
         await self.handler.setup()
         srv = web.TCPSite(
             self.handler, '127.0.0.1', port)
-        url = "http://127.0.0.1:{}/".format(port)
+        self.url = "http://127.0.0.1:{}/".format(port)
         self.srv = srv
-        client = Client(url, loop=self.loop)
         await self.srv.start()
-        self.client = client
-        return app, srv, client
+        return app, srv
 
     def test_validate(self):
         async def call(check, method, data=None, id=None):
-            app, srv, client = await self.create_server(middlewares=[
+            app, srv = await self.create_server(middlewares=[
                 custom_errorhandler_middleware])
 
             resp = Response(**check)
@@ -62,13 +61,16 @@ class TestClient(unittest.TestCase):
             if not id:
                 id = resp.id
 
-            ret = await client.call(method, data, id=id)
+            async with ClientSession() as session:
+                client = Client(session, self.url)
 
-            self.assertEqual(resp.error, ret.error)
-            self.assertEqual(resp.result, ret.result)
+                ret = await client.call(method, data, id=id)
 
-            if resp.id:
-                self.assertEqual(resp.id, ret.id)
+                self.assertEqual(resp.error, ret.error)
+                self.assertEqual(resp.result, ret.result)
+
+                if resp.id:
+                    self.assertEqual(resp.id, ret.id)
 
         self.loop.run_until_complete(call(INVALID_PARAMS, "v_hello"))
         self.loop.run_until_complete(
@@ -84,7 +86,7 @@ class TestClient(unittest.TestCase):
             call(create_response("1", {"status": "OK"}),
                  "v_hello", {"data": "TEST"}, "1"))
         self.loop.run_until_complete(
-            call(create_response(True, {"status": "ok"}),
+            call(INVALID_REQUEST,
                  "v_hello", {"data": "ok"}, True))
         self.loop.run_until_complete(
             call(create_response(False, {"status": "ok"}),
@@ -92,7 +94,7 @@ class TestClient(unittest.TestCase):
 
         self.loop.run_until_complete(call(NOT_FOUND, "not_found"))
         self.loop.run_until_complete(call(INVALID_PARAMS, "v_hello"))
-        self.loop.run_until_complete(call(CUSTOM_ERROR_G, "err_exc"))
-        self.loop.run_until_complete(call(CUSTOM_ERROR_L, "err_exc2"))
+        self.loop.run_until_complete(call(SERVER_ERROR, "err_exc"))
+        self.loop.run_until_complete(call(INTERNAL_ERROR, "err_exc2"))
         self.loop.run_until_complete(call(CUSTOM_ERROR_GT, "err_gt"))
         self.loop.run_until_complete(call(CUSTOM_ERROR_LT, "err_lt"))

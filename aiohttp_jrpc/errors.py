@@ -22,64 +22,70 @@ class JError(object):
         else:
             self.rid = rid
 
-    def parse(self, exc="unknown"):
+    def parse(self):
         """ json parsing error """
         return JResponse(jsonrpc={
             'id': self.rid,
             'error': {
                 'code': -32700,
-                'message': 'Parse error: ' + str(exc)
+                'message': 'Parse error'
             },
         })
 
-    def request(self, exc="unknown"):
+    def request(self):
         """ incorrect json rpc request """
         return JResponse(jsonrpc={
             'id': self.rid,
             'error': {
                 'code': -32600,
-                'message': 'Invalid Request: ' + str(exc)
+                'message': 'Invalid Request'
             },
         })
 
-    def method(self, exc="unknown"):
+    def method(self):
         """ Not found method on the server """
         return JResponse(jsonrpc={
             'id': self.rid,
             'error': {
                 'code': -32601,
-                'message': 'Method not found: ' + str(exc)
+                'message': 'Method not found'
             },
         })
 
-    def params(self, exc="unknown"):
+    def params(self):
         """ Incorrect params (used in validate) """
         return JResponse(jsonrpc={
             'id': self.rid,
             'error': {
                 'code': -32602,
-                'message': 'Invalid params: ' + str(exc)
+                'message': 'Invalid params'
             },
         })
 
-    def internal(self, exc="unknown"):
+    def internal(self):
         """ Internal server error, actually send on every unknow exception """
         return JResponse(jsonrpc={
             'id': self.rid,
             'error': {
                 'code': -32603,
-                'message': 'Internal error: ' + str(exc)
+                'message': 'Internal error'
             },
         })
 
     def custom(self, code, message):
         """
+        The error codes from and including -32768 to -32000
+        are reserved for pre-defined errors.
+
         Specific server side errors use: -32000 to -32099
         reserved for implementation-defined server-errors
         """
         if -32000 >= code and -32099 <= code:
+            message = 'Server error'
+        elif -32000 >= code and -32768 <= code:
             code = -32603
             message = 'Internal error'
+
         return JResponse(jsonrpc={
             'id': self.rid,
             'error': {'code': code, 'message': message},
