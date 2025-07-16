@@ -39,15 +39,15 @@ Example server
 
     class MyJRPC(Service):
         @Service.valid(SCH)
-        def hello(self, ctx, data):
+        async def hello(self, ctx, data):
             if data["data"] == "hello":
                 return {"status": "hi"}
             return {"status": data}
 
-        def error(self, ctx, data):
+        async def error(self, ctx, data):
             raise Exception("Error which will catch middleware")
 
-        def no_valid(self, ctx, data):
+        async def no_valid(self, ctx, data):
             """ Method without validation incommig data """
             return {"status": "ok"}
 

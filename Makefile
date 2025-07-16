@@ -3,7 +3,7 @@ flake:
 	pyflakes aiohttp_jrpc tests
 
 test: flake
-	py.test -s -q ./tests/
+	py.test -x -s -q ./tests/
 
 vtest: flake
 	py.test -s ./tests/

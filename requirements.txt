@@ -1,3 +1,13 @@
--e .
-jsonschema
-aiohttp
+aiohappyeyeballs==2.6.1
+aiohttp==3.12.14
+aiosignal==1.4.0
+attrs==25.3.0
+frozenlist==1.7.0
+idna==3.10
+jsonschema==4.24.0
+jsonschema-specifications==2025.4.1
+multidict==6.6.3
+propcache==0.3.2
+referencing==0.36.2
+rpds-py==0.26.0
+yarl==1.20.1

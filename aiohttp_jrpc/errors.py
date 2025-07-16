@@ -83,8 +83,7 @@ class JError(object):
         if -32000 >= code and -32099 <= code:
             message = 'Server error'
         elif -32000 >= code and -32768 <= code:
-            code = -32603
-            message = 'Internal error'
+            return self.internal()
 
         return JResponse(jsonrpc={
             'id': self.rid,

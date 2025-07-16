@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+0.2.0 (2026-07-16)
+
+* Fix tests
+* Updated to work on latest python and aiohttp
+
 0.1.0 (2016-02-20)
 
 * Added client and tests

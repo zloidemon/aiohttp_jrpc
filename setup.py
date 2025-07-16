@@ -21,8 +21,7 @@ def read(f):
         os.path.dirname(__file__), f), encoding="utf-8"
     ).read().strip()
 
-
-install_requires = ['aiohttp>=0.17', 'jsonschema']
+install_requires = ['aiohttp>=3.12.14', 'jsonschema>=4.24.0']
 tests_require = install_requires + ['pytest']
 
 
@@ -46,9 +45,9 @@ setup(name='aiohttp_jrpc',
           'Intended Audience :: Developers',
           'License :: OSI Approved :: BSD License',
           'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.6',
-          'Programming Language :: Python :: 3.7',
-          'Programming Language :: Python :: 3.8',
+          'Programming Language :: Python :: 3.11',
+          'Programming Language :: Python :: 3.12',
+          'Programming Language :: Python :: 3.13',
           'Programming Language :: Python',
           'Topic :: Internet :: WWW/HTTP'],
       include_package_data=True)

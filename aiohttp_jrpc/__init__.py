@@ -12,7 +12,6 @@ from jsonschema import validate, ValidationError, SchemaError, FormatChecker
 from functools import wraps
 from uuid import uuid4
 from aiohttp.web import middleware
-import asyncio
 import json
 import traceback
 
@@ -169,7 +168,6 @@ class Service(object):
 
         try:
             i_app = getattr(self, data['method'])
-            i_app = asyncio.coroutine(i_app)
         except Exception:
             return JError(data).method()
 
