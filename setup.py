@@ -17,9 +17,11 @@ def read_version():
 
 
 def read(f):
-    return open(os.path.join(os.path.dirname(__file__), f), encoding="utf-8").read().strip()
+    return open(os.path.join(
+        os.path.dirname(__file__), f), encoding="utf-8"
+    ).read().strip()
 
-install_requires = ['aiohttp>=3.12.14', 'validictory>=1.1.3']
+install_requires = ['aiohttp>=3.12.14', 'jsonschema>=4.24.0']
 tests_require = install_requires + ['pytest']
 
 
