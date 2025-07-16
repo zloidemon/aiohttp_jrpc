@@ -3,7 +3,8 @@ CHANGES
 
 0.2.0 (2026-07-16)
 
-* Fix tests
+* Added new tests
+* async functions in classes after removing coroutine decorator
 * Use enum with error messages
 * Updated to work on latest python and aiohttp
 
