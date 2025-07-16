@@ -28,7 +28,7 @@ class JResponse(Response):
 def message(error):
     def decorator(func):
         def wrapper(*args, **kwargs):
-            return func(*args, error, **kwargs)
+            return func(*args, error.value, **kwargs)
         return wrapper
     return decorator
 
@@ -43,12 +43,12 @@ class JError:
 
     def __response(self, error):
         """ base response """
-        code, message = error.value
+        code, message = error
         return JResponse(jsonrpc={
             'id': self.rid,
             'error': {
                 'code': code,
-                'message': message
+                'message': message,
             },
         })
 
@@ -94,7 +94,4 @@ class JError:
         elif code >= _err_reserved and code <= _err_max:
             return self.internal()
 
-        return JResponse(jsonrpc={
-            'id': self.rid,
-            'error': {'code': code, 'message': message},
-        })
+        return self.__response((code, message,))
