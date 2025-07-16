@@ -41,9 +41,13 @@ class JError:
         else:
             self.rid = rid
 
-    def __response(self, error):
+    def __response(self, error, exc=None):
         """ base response """
         code, message = error
+
+        if exc is not None:
+            message += ': %s' % str(exc)
+
         return JResponse(jsonrpc={
             'id': self.rid,
             'error': {
@@ -53,29 +57,29 @@ class JError:
         })
 
     @message(ErrorCode.PARSE_ERROR)
-    def parse(self, error):
+    def parse(self, error, exc=None):
         """ json parsing error """
-        return self.__response(error)
+        return self.__response(error, exc)
 
     @message(ErrorCode.INVALID_REQUEST)
-    def request(self, error):
+    def request(self, error, exc=None):
         """ incorrect json rpc request """
-        return self.__response(error)
+        return self.__response(error, exc)
 
     @message(ErrorCode.METHOD_NOT_FOUND)
-    def method(self, error):
+    def method(self, error, exc=None):
         """ Not found method on the server """
-        return self.__response(error)
+        return self.__response(error, exc)
 
     @message(ErrorCode.INVALID_PARAMS)
-    def params(self, error):
+    def params(self, error, exc=None):
         """ Incorrect params (used in validate) """
-        return self.__response(error)
+        return self.__response(error, exc)
 
     @message(ErrorCode.INTERNAL_ERROR)
-    def internal(self, error):
+    def internal(self, error, exc=None):
         """ Internal server error, actually send on every unknow exception """
-        return self.__response(error)
+        return self.__response(error, exc)
 
     def custom(self, code, message):
         """

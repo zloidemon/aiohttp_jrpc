@@ -1,5 +1,6 @@
 from aiohttp_jrpc import Service, JError
 from aiohttp.web import middleware
+import copy
 
 
 PARSE_ERROR = {
@@ -42,6 +43,12 @@ REQ_SCHEM = {
 }
 
 
+def update_exc_error(error):
+    new = copy.deepcopy(error)
+    new['error']['message'] += ': test custom middleware, exception is ok'
+    return new
+
+
 @middleware
 async def custom_errorhandler_middleware(request, handler):
     try:
@@ -58,6 +65,22 @@ async def custom_errorhandler_middleware(request, handler):
         return JError().custom(-32000, 'Bad code')
 
 
+@middleware
+async def custom_text_resp_middleware(request, handler):
+    try:
+        return (await handler(request))
+    except AttributeError as exc:
+        return JError().parse(exc=exc)
+    except ImportError as exc:
+        return JError().request(exc=exc)
+    except LookupError as exc:
+        return JError().method(exc=exc)
+    except NameError as exc:
+        return JError().params(exc=exc)
+    except Exception as exc:
+        return JError().internal(exc=exc)
+
+
 class MyService(Service):
     async def hello(self, ctx, data):
         return {"a": "b"}
@@ -69,7 +92,7 @@ class MyService(Service):
         return {"status": "ok"}
 
     async def err_exc(self, ctx, data):
-        raise Exception("test middleware, exception is ok")
+        raise Exception("test custom middleware, exception is ok")
 
     async def err_exc2(self, ctx, data):
         raise NameError("test custom middleware, exception is ok")

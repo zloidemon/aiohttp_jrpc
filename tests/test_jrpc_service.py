@@ -5,7 +5,12 @@ import json
 import aiohttp
 from aiohttp import web
 from aiohttp_jrpc import jrpc_errorhandler_middleware
-from utils import custom_errorhandler_middleware, MyService
+from utils import (
+    MyService,
+    custom_errorhandler_middleware,
+    custom_text_resp_middleware,
+    update_exc_error,
+)
 from utils import create_response, create_request
 from utils import (
     CUSTOM_ERROR_GT,
@@ -104,6 +109,27 @@ class TestService(unittest.TestCase):
         self.loop.run_until_complete(post(CUSTOM_ERROR_GT,
                                           create_request("err_gt")))
         self.loop.run_until_complete(post(CUSTOM_ERROR_LT,
+                                          create_request("err_lt")))
+
+    def test_custom_resp_error(self):
+
+        async def post(check, data=None):
+            app, srv, url = await self.create_server(middlewares=[
+                custom_text_resp_middleware])
+            resp = await self.client.post(url, data=json.dumps(data))
+            self.assertEqual(200, resp.status)
+            self.assertEqual(check, (await resp.json()))
+            self.assertEqual(None, (await resp.release()))
+
+        self.loop.run_until_complete(post(update_exc_error(INTERNAL_ERROR),
+                                          create_request("err_exc")))
+        self.loop.run_until_complete(post(update_exc_error(INVALID_REQUEST),
+                                          create_request("err_exc3")))
+        self.loop.run_until_complete(post(update_exc_error(INVALID_PARAMS),
+                                          create_request("err_exc2")))
+        self.loop.run_until_complete(post(update_exc_error(PARSE_ERROR),
+                                          create_request("err_gt")))
+        self.loop.run_until_complete(post(update_exc_error(NOT_FOUND),
                                           create_request("err_lt")))
 
     def test_validate(self):
