@@ -98,6 +98,8 @@ class TestService(unittest.TestCase):
         self.loop.run_until_complete(post(SERVER_ERROR,
                                           create_request("err_exc")))
         self.loop.run_until_complete(post(INTERNAL_ERROR,
+                                          create_request("err_exc3")))
+        self.loop.run_until_complete(post(INTERNAL_ERROR,
                                           create_request("err_exc2")))
         self.loop.run_until_complete(post(CUSTOM_ERROR_GT,
                                           create_request("err_gt")))

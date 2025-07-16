@@ -48,6 +48,8 @@ async def custom_errorhandler_middleware(request, handler):
         return (await handler(request))
     except AttributeError:
         return JError().custom(-31999, 'Custom error gt')
+    except ImportError:
+        return JError().custom(-32100, 'Custom error lt')
     except LookupError:
         return JError().custom(-32769, 'Custom error lt')
     except NameError:
@@ -71,6 +73,9 @@ class MyService(Service):
 
     async def err_exc2(self, ctx, data):
         raise NameError("test custom middleware, exception is ok")
+
+    async def err_exc3(self, ctx, data):
+        raise ImportError("test custom middleware, exception is ok")
 
     async def err_gt(self, ctx, data):
         raise AttributeError("test custom middleware, exception is ok")

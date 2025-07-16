@@ -85,9 +85,13 @@ class JError:
         Specific server side errors use: -32000 to -32099
         reserved for implementation-defined server-errors
         """
-        if -32000 >= code and -32099 <= code:
+        _err_max = -32000
+        _err_min = -32099
+        _err_reserved = -32768
+
+        if code >= _err_min and code <= _err_max:
             _, message = ErrorCode.SERVER_ERROR.value
-        elif -32000 >= code and -32768 <= code:
+        elif code >= _err_reserved and code <= _err_max:
             return self.internal()
 
         return JResponse(jsonrpc={
