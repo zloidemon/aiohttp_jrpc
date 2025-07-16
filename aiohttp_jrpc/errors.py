@@ -1,6 +1,17 @@
 """ Error responses """
 from aiohttp.web import Response
+from enum import Enum, unique
 import json
+
+
+@unique
+class ErrorCode(Enum):
+    INTERNAL_ERROR = (-32603, 'Internal error')
+    INVALID_PARAMS = (-32602, 'Invalid params')
+    INVALID_REQUEST = (-32600, 'Invalid Request')
+    METHOD_NOT_FOUND = (-32601, 'Method not found')
+    PARSE_ERROR = (-32700, 'Parse error')
+    SERVER_ERROR = (None, 'Server error')
 
 
 class JResponse(Response):
@@ -14,7 +25,15 @@ class JResponse(Response):
                          headers=headers, content_type='application/json')
 
 
-class JError(object):
+def message(error):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            return func(*args, error, **kwargs)
+        return wrapper
+    return decorator
+
+
+class JError:
     """ Class with standart errors """
     def __init__(self, data=None, rid=None):
         if data is not None:
@@ -22,55 +41,41 @@ class JError(object):
         else:
             self.rid = rid
 
-    def parse(self):
+    def __response(self, error):
+        """ base response """
+        code, message = error.value
+        return JResponse(jsonrpc={
+            'id': self.rid,
+            'error': {
+                'code': code,
+                'message': message
+            },
+        })
+
+    @message(ErrorCode.PARSE_ERROR)
+    def parse(self, error):
         """ json parsing error """
-        return JResponse(jsonrpc={
-            'id': self.rid,
-            'error': {
-                'code': -32700,
-                'message': 'Parse error'
-            },
-        })
+        return self.__response(error)
 
-    def request(self):
+    @message(ErrorCode.INVALID_REQUEST)
+    def request(self, error):
         """ incorrect json rpc request """
-        return JResponse(jsonrpc={
-            'id': self.rid,
-            'error': {
-                'code': -32600,
-                'message': 'Invalid Request'
-            },
-        })
+        return self.__response(error)
 
-    def method(self):
+    @message(ErrorCode.METHOD_NOT_FOUND)
+    def method(self, error):
         """ Not found method on the server """
-        return JResponse(jsonrpc={
-            'id': self.rid,
-            'error': {
-                'code': -32601,
-                'message': 'Method not found'
-            },
-        })
+        return self.__response(error)
 
-    def params(self):
+    @message(ErrorCode.INVALID_PARAMS)
+    def params(self, error):
         """ Incorrect params (used in validate) """
-        return JResponse(jsonrpc={
-            'id': self.rid,
-            'error': {
-                'code': -32602,
-                'message': 'Invalid params'
-            },
-        })
+        return self.__response(error)
 
-    def internal(self):
+    @message(ErrorCode.INTERNAL_ERROR)
+    def internal(self, error):
         """ Internal server error, actually send on every unknow exception """
-        return JResponse(jsonrpc={
-            'id': self.rid,
-            'error': {
-                'code': -32603,
-                'message': 'Internal error'
-            },
-        })
+        return self.__response(error)
 
     def custom(self, code, message):
         """
@@ -81,7 +86,7 @@ class JError(object):
         reserved for implementation-defined server-errors
         """
         if -32000 >= code and -32099 <= code:
-            message = 'Server error'
+            _, message = ErrorCode.SERVER_ERROR.value
         elif -32000 >= code and -32768 <= code:
             return self.internal()
 
