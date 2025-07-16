@@ -1,9 +1,9 @@
 flake:
-	pep8 aiohttp_jrpc tests/*.py
+	pycodestyle aiohttp_jrpc tests/*.py
 	pyflakes aiohttp_jrpc tests
 
 test: flake
-	py.test -s -q ./tests/
+	py.test -x -s -q ./tests/
 
 vtest: flake
 	py.test -s ./tests/

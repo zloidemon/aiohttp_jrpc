@@ -1,5 +1,6 @@
-import asyncio
 from aiohttp_jrpc import Service, JError
+from aiohttp.web import middleware
+import copy
 
 
 PARSE_ERROR = {
@@ -22,15 +23,18 @@ INTERNAL_ERROR = {
     'jsonrpc': '2.0', 'id': None,
     'error': {'code': -32603, 'message': 'Internal error'}
 }
+SERVER_ERROR = {
+    'jsonrpc': '2.0', 'id': None,
+    'error': {'code': -32000, 'message': 'Server error'}
+}
 CUSTOM_ERROR_GT = {
     'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32000, 'message': 'Custom error gt'}
+    'error': {'code': -31999, 'message': 'Custom error gt'}
 }
 CUSTOM_ERROR_LT = {
     'jsonrpc': '2.0', 'id': None,
-    'error': {'code': -32099, 'message': 'Custom error lt'}
+    'error': {'code': -32769, 'message': 'Custom error lt'}
 }
-
 REQ_SCHEM = {
     "type": "object",
     "properties": {
@@ -39,41 +43,67 @@ REQ_SCHEM = {
 }
 
 
-async def custom_errorhandler_middleware(app, handler):
-    async def middleware(request):
-        try:
-            return (await handler(request))
-        except AttributeError:
-            return JError().custom(-32000, 'Custom error gt')
-        except LookupError:
-            return JError().custom(-32099, 'Custom error lt')
-        except NameError:
-            return JError().custom(-32100, 'Bad custom error')
-        except Exception:
-            return JError().custom(-31999, 'Bad custom error')
-    return middleware
+def update_exc_error(error):
+    new = copy.deepcopy(error)
+    new['error']['message'] += ': test custom middleware, exception is ok'
+    return new
+
+
+@middleware
+async def custom_errorhandler_middleware(request, handler):
+    try:
+        return (await handler(request))
+    except AttributeError:
+        return JError().custom(-31999, 'Custom error gt')
+    except ImportError:
+        return JError().custom(-32100, 'Custom error lt')
+    except LookupError:
+        return JError().custom(-32769, 'Custom error lt')
+    except NameError:
+        return JError().custom(-32768, 'Bad code')
+    except Exception:
+        return JError().custom(-32000, 'Bad code')
+
+
+@middleware
+async def custom_text_resp_middleware(request, handler):
+    try:
+        return (await handler(request))
+    except AttributeError as exc:
+        return JError().parse(exc=exc)
+    except ImportError as exc:
+        return JError().request(exc=exc)
+    except LookupError as exc:
+        return JError().method(exc=exc)
+    except NameError as exc:
+        return JError().params(exc=exc)
+    except Exception as exc:
+        return JError().internal(exc=exc)
 
 
 class MyService(Service):
-    def hello(self, ctx, data):
+    async def hello(self, ctx, data):
         return {"a": "b"}
 
     @Service.valid(REQ_SCHEM)
-    def v_hello(self, ctx, data):
+    async def v_hello(self, ctx, data):
         if data["data"] == "TEST":
             return {"status": "OK"}
         return {"status": "ok"}
 
-    def err_exc(self, ctx, data):
-        raise Exception("test middleware, exception is ok")
+    async def err_exc(self, ctx, data):
+        raise Exception("test custom middleware, exception is ok")
 
-    def err_exc2(self, ctx, data):
+    async def err_exc2(self, ctx, data):
         raise NameError("test custom middleware, exception is ok")
 
-    def err_gt(self, ctx, data):
+    async def err_exc3(self, ctx, data):
+        raise ImportError("test custom middleware, exception is ok")
+
+    async def err_gt(self, ctx, data):
         raise AttributeError("test custom middleware, exception is ok")
 
-    def err_lt(self, ctx, data):
+    async def err_lt(self, ctx, data):
         raise LookupError("test custom middleware, exception is ok")
 
 

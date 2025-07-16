@@ -39,15 +39,15 @@ Example server
 
     class MyJRPC(Service):
         @Service.valid(SCH)
-        def hello(self, ctx, data):
+        async def hello(self, ctx, data):
             if data["data"] == "hello":
                 return {"status": "hi"}
             return {"status": data}
 
-        def error(self, ctx, data):
+        async def error(self, ctx, data):
             raise Exception("Error which will catch middleware")
 
-        def no_valid(self, ctx, data):
+        async def no_valid(self, ctx, data):
             """ Method without validation incommig data """
             return {"status": "ok"}
 
@@ -75,14 +75,16 @@ Example client
 
     import asyncio
     import aiohttp
-    from aiohttp_jrpc import Client,InvalidResponse
+    from aiohttp_jrpc import Client, InvalidResponse
 
-    Remote = Client('http://localhost:8080/api')
+    URL = 'http://localhost:8080/api'
 
     async def rpc_call():
         try:
-            rsp = await Remote.request('hello', {'data': 'hello'})
-            return rsp
+            async with aiohttp.ClientSession() as client:
+                Remote = Client(client, URL)
+                rsp = await Remote.call('hello', {'data': 'hello'})
+                return rsp
         except InvalidResponse as err:
             return err
         except Exception as err:
