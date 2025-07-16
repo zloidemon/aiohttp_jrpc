@@ -19,8 +19,8 @@ class TestService(unittest.TestCase):
         self.client = aiohttp.ClientSession(loop=self.loop)
 
     def tearDown(self):
-        self.client.close()
-        self.loop.run_until_complete(self.handler.finish_connections())
+        self.loop.run_until_complete(self.client.close())
+        self.loop.run_until_complete(self.handler.shutdown())
         self.srv.close()
         self.loop.run_until_complete(self.srv.wait_closed())
         self.loop.close()
@@ -37,12 +37,12 @@ class TestService(unittest.TestCase):
         return (await MyService(request))
 
     async def create_server(self, middlewares=[]):
-        app = web.Application(loop=self.loop,
-                              middlewares=middlewares)
+        app = web.Application(loop=self.loop, middlewares=middlewares)
 
         port = self.find_unused_port()
         self.handler = app.make_handler(
             debug=False, keep_alive_on=False)
+        app.router._frozen = False
         app.router.add_route('*', '/', self.request_wrapper)
         srv = await self.loop.create_server(
             self.handler, '127.0.0.1', port)

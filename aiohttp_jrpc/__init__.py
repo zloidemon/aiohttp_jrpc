@@ -11,7 +11,7 @@ import asyncio
 import json
 import traceback
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 REQ_JSONRPC20 = {
     "type": "object",
@@ -109,7 +109,6 @@ class Service(object):
 
         try:
             i_app = getattr(self, data['method'])
-            i_app = asyncio.coroutine(i_app)
         except Exception:
             return JError(data).method()
 

@@ -62,10 +62,9 @@ class JError(object):
         Specific server side errors use: -32000 to -32099
         reserved for implementation-defined server-errors
         """
-        if -32000 < code and -32099 > code:
-            code = -32603
-            message = 'Internal error'
-        return JResponse(jsonrpc={
-            'id': self.rid,
-            'error': {'code': code, 'message': message},
-        })
+        if code <= -32000 and code >= -32099:
+            return JResponse(jsonrpc={
+                'id': self.rid,
+                'error': {'code': code, 'message': message},
+            })
+        return self.internal()
