@@ -1,6 +1,6 @@
 name: Build aiohttp_jrpc
-on:
-  on: [push, pull_request]
+
+on: [push, pull_request]
 
 jobs:
   build:
