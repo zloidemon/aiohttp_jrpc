@@ -10,7 +10,7 @@ jobs:
         python-version: ["3.11", "3.12", "3.13"]
         env-asyncio-debug: ["1", "0"]
     env:
-      PYTHONASYNCIODEBUG=${{ matrix.env-asyncio-debug }}
+      PYTHONASYNCIODEBUG: ${{ matrix.env-asyncio-debug }}
     steps:
       - uses: actions/checkout@v4
 
