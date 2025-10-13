@@ -5,9 +5,9 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-		strategy:
-			matrix:
-				python-version: ["3.11", "3.12", "3.13"]
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
         env-asyncio-debug: ["1", "0"]
     env:
       PYTHONASYNCIODEBUG=${{ matrix.env-asyncio-debug }}
