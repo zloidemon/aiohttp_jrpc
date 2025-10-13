@@ -1,9 +1,7 @@
 aiohttp_jrpc
 ============
-.. image:: https://travis-ci.org/zloidemon/aiohttp_jrpc.svg?branch=master
-    :target: https://travis-ci.org/zloidemon/aiohttp_jrpc
-.. image:: https://coveralls.io/repos/zloidemon/aiohttp_jrpc/badge.svg
-    :target: https://coveralls.io/r/zloidemon/aiohttp_jrpc
+.. image:: https://github.com/zloidemon/aiohttp_jrpc/actions/workflows/build.yml/badge.svg
+    :target: https://github.com/zloidemon/aiohttp_jrpc/actions/workflows/build.yml
 .. image:: https://badge.fury.io/py/aiohttp_jrpc.svg
     :target: https://badge.fury.io/py/aiohttp_jrpc
 
