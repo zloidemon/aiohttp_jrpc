@@ -43,5 +43,5 @@ rpds-py==0.26.0
 SecretStorage==3.3.3
 setuptools==80.9.0
 twine==6.1.0
-urllib3==2.5.0
+urllib3==2.6.3
 yarl==1.20.1
